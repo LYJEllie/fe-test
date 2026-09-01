@@ -207,6 +207,17 @@ table.t th{background:var(--bg);font-weight:600;white-space:nowrap}
 .exp-w .v .zh{display:block;margin-top:2px;color:var(--ink-faint);font-size:13.5px}
 .exp-none{color:var(--ink-faint);font-size:13.5px;font-style:normal}
 
+/* ---------- ふりがな ---------- */
+ruby{ruby-align:center}
+rt{
+  font-size:.52em;font-weight:400;color:var(--ink-faint);
+  line-height:1.15;letter-spacing:0;text-align:center;user-select:none;
+}
+/* ルビの分だけ行間を広げる。中国語訳には振らないので元に戻す */
+body.kana .qtext,body.kana .opt,body.kana .opt-note,
+body.kana .exp-main,body.kana .exp-w{line-height:2.4}
+body.kana .zh{line-height:1.75}
+
 /* ---------- 翻页导航 ---------- */
 .nav{
   display:flex;align-items:center;justify-content:center;gap:14px;
@@ -262,6 +273,7 @@ kbd{
    <div class="spacer"></div>
    <input id="search" type="search" placeholder="キーワード検索 / 中日文搜索" autocomplete="off">
    <button class="tool" id="btn-lang">全文 日本語</button>
+   <button class="tool" id="btn-kana" title="漢字にふりがなを振る">ふりがな</button>
    <button class="tool" id="btn-mode">📖 一問ずつ</button>
    <button class="tool" id="btn-theme" title="配色">◐</button>
   </div>
@@ -314,6 +326,7 @@ const state = {
   mode: ui.mode || "paged",    // paged | list
   idx: 0,
   perLang: {},                 // id -> "jp" | "both"（個別切替）
+  kana: false,                 // ふりがな表示（データは初回オンで読み込む）
   listShown: 0,
   folded: !!ui.folded,         // 絞込エリアを畳んでいるか（手動のみ）
 };
@@ -321,6 +334,7 @@ function saveUI() {
   save(LS_UI, {
     year: [...state.year], subject: [...state.subject], field: [...state.field],
     status: state.status, lang: state.lang, mode: state.mode, folded: state.folded,
+    kana: state.kana,
   });
 }
 
@@ -332,6 +346,60 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 const uniq = (arr) => [...new Set(arr)];
+
+/* ===================== ふりがな ===================== */
+/* data/furigana.js は 1MB 超あるので，初めてオンにした時だけ読み込む。
+   注釈は "<原文の文字数>;<開始>,<長さ>,<読み>|…" の形。文字数が合わない
+   （＝questions.js だけ更新された）場合は，その場で注釈を捨てて素の文を出す。 */
+let RUBY = null;
+let rubyLoading = false;
+
+function rubyOf(q) { return state.kana && RUBY ? RUBY[q.id] || null : null; }
+
+function rubyHTML(text, packed) {
+  const s = String(text == null ? "" : text);
+  if (!packed || typeof packed !== "string") return esc(s);
+  const i = packed.indexOf(";");
+  if (i < 0 || +packed.slice(0, i) !== s.length) return esc(s);
+  let out = "", cur = 0;
+  for (const e of packed.slice(i + 1).split("|")) {
+    const a = e.split(",");
+    const st = +a[0], len = +a[1];
+    if (!(st >= cur) || st + len > s.length) return esc(s);
+    out += esc(s.slice(cur, st)) +
+      "<ruby>" + esc(s.substr(st, len)) + "<rp>（</rp><rt>" + esc(a[2]) + "</rt><rp>）</rp></ruby>";
+    cur = st + len;
+  }
+  return out + esc(s.slice(cur));
+}
+
+// 本文 1 段落目は question と同一のことが多く，生成時に重複を省いてある
+function annContent(rb, i) {
+  if (!rb) return null;
+  const c = rb.c && rb.c[i];
+  return c || (i === 0 ? rb.q : null);
+}
+
+function ensureRuby(done) {
+  if (RUBY) { done(); return; }
+  if (rubyLoading) return;
+  rubyLoading = true;
+  const b = $("#btn-kana"), label = b.textContent;
+  b.textContent = "読み込み中…";
+  b.disabled = true;
+  const finish = (ok) => {
+    rubyLoading = false;
+    b.disabled = false;
+    b.textContent = label;
+    if (ok) done();
+    else alert("ふりがなデータ（data/furigana.js）を読み込めませんでした。");
+  };
+  const sc = document.createElement("script");
+  sc.src = "data/furigana.js";
+  sc.onload = () => { RUBY = window.FE_RUBY || {}; finish(true); };
+  sc.onerror = () => finish(false);
+  document.head.appendChild(sc);
+}
 
 /* ===================== フィルタ ===================== */
 const YEARS = uniq(DATA.map((q) => q.year));
@@ -426,19 +494,23 @@ function renderTable(t) {
   return h;
 }
 
-function renderContent(q, lang) {
+function renderContent(q, lang, rb) {
   const c = q.content || [];
   let h = "";
   const first = c[0];
-  const jpText = first && first.type === "text" ? first.value : q.question;
-  h += '<p class="qtext">' + esc(jpText) + "</p>";
+  const isText = !!(first && first.type === "text");
+  const jpText = isText ? first.value : q.question;
+  h += '<p class="qtext">' + rubyHTML(jpText, isText ? annContent(rb, 0) : rb && rb.q) + "</p>";
   if (lang === "both" && q.question_zh && q.question_zh !== jpText) {
     h += '<p class="qtext zh">' + esc(q.question_zh) + "</p>";
   }
   // 図・表・コードは日本語のまま（原資料にしかない形）
   for (let i = 0; i < c.length; i++) {
     const b = c[i];
-    if (b.type === "text") { if (i > 0) h += '<p class="qtext">' + esc(b.value) + "</p>"; continue; }
+    if (b.type === "text") {
+      if (i > 0) h += '<p class="qtext">' + rubyHTML(b.value, annContent(rb, i)) + "</p>";
+      continue;
+    }
     h += '<div class="blk">';
     if (b.type === "code") {
       if (b.label) h += '<div class="blk-label">' + esc(b.label) + "</div>";
@@ -454,38 +526,41 @@ function renderContent(q, lang) {
   return h;
 }
 
-function oneChoice(q, v) {
+function oneChoice(q, v, ann) {
   if (Array.isArray(v)) {
+    const at = (i) => (Array.isArray(ann) ? ann[i] || null : null);
     if (q.choice_columns && q.choice_columns.length === v.length) {
       return '<div class="tw"><table class="t"><thead><tr>' +
         q.choice_columns.map((h) => "<th>" + esc(h) + "</th>").join("") +
         "</tr></thead><tbody><tr>" +
-        v.map((x) => "<td>" + esc(x) + "</td>").join("") + "</tr></tbody></table></div>";
+        v.map((x, i) => "<td>" + rubyHTML(x, at(i)) + "</td>").join("") + "</tr></tbody></table></div>";
     }
-    return "<ol>" + v.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ol>";
+    return "<ol>" + v.map((x, i) => "<li>" + rubyHTML(x, at(i)) + "</li>").join("") + "</ol>";
   }
-  return esc(v);
+  return rubyHTML(v, typeof ann === "string" ? ann : null);
 }
 
-function choiceBody(q, k, lang) {
+function choiceBody(q, k, lang, rb) {
   // 選択肢の表は日本語しか無いので，対訳でも 1 度だけ描く
   if (q.choice_tables && q.choice_tables[k]) return renderTable(q.choice_tables[k]);
   const c = (q.choices || {})[k];
   if (!c) return '<span style="color:var(--ink-faint)">（図を参照）</span>';
-  const jp = oneChoice(q, c.jp);
+  const jp = oneChoice(q, c.jp, rb && rb.o ? rb.o[k] : null);
   if (lang !== "both" || c.zh == null) return jp;
-  const zh = oneChoice(q, c.zh);
+  const zh = oneChoice(q, c.zh, null);
   // 数式や数値だけの選択肢は日中が同一になるため，重複表示を避ける
-  return zh === jp ? jp : jp + '<span class="zh">' + zh + "</span>";
+  // （ルビ付きの jp とは比べられないので，ルビ無しで描き直して見比べる）
+  return zh === oneChoice(q, c.jp, null) ? jp : jp + '<span class="zh">' + zh + "</span>";
 }
 
-function renderExplain(q, lang) {
+function renderExplain(q, lang, rb) {
   // 日本語を主とし，対訳モードでは中国語を下に添える
-  const pair = (o) => {
+  const pair = (o, ann) => {
     if (!o) return "";
     const jp = o.jp || o.zh || "";
-    if (lang !== "both" || !o.zh || o.zh === jp) return esc(jp);
-    return esc(jp) + '<span class="zh">' + esc(o.zh) + "</span>";
+    const main = rubyHTML(jp, o.jp ? ann : null);   // jp が無い時は中国語なのでルビは振らない
+    if (lang !== "both" || !o.zh || o.zh === jp) return main;
+    return main + '<span class="zh">' + esc(o.zh) + "</span>";
   };
   const main = q.explanation ? (q.explanation.jp || q.explanation.zh) : "";
   const isNone = main === "无" || main === "なし";
@@ -498,13 +573,14 @@ function renderExplain(q, lang) {
       (lang === "both" ? '<span class="zh">本题解析暂缺，待核对原始试卷。</span>' : "") + "</div>";
     return h + "</div>";
   }
-  h += '<div class="exp-main">' + pair(q.explanation) + "</div>";
+  h += '<div class="exp-main">' + pair(q.explanation, rb && rb.e) + "</div>";
   const ew = q.explanation_wrong || {};
   const ks = Object.keys(ew);
   if (ks.length) {
     h += '<div class="exp-wrong">';
     for (const k of ks) {
-      h += '<div class="exp-w"><span class="k">' + esc(k) + '</span><span class="v">' + pair(ew[k]) + "</span></div>";
+      h += '<div class="exp-w"><span class="k">' + esc(k) + '</span><span class="v">' +
+           pair(ew[k], rb && rb.w ? rb.w[k] : null) + "</span></div>";
     }
     h += "</div>";
   }
@@ -516,6 +592,7 @@ function langOf(q) { return state.perLang[q.id] || state.lang; }
 
 function buildCard(q) {
   const lang = langOf(q);
+  const rb = rubyOf(q);
   const p = progress[q.id];
   const card = document.createElement("div");
   card.className = "card";
@@ -532,7 +609,7 @@ function buildCard(q) {
        (lang === "both" ? "原文のみ" : "訳") + "</button>";
   h += "</div>";
 
-  h += renderContent(q, lang);
+  h += renderContent(q, lang, rb);
 
   const ks = choiceKeys(q);
   const noText = !q.choices || !Object.keys(q.choices).length;
@@ -543,7 +620,7 @@ function buildCard(q) {
   }
   for (const k of ks) {
     h += '<button class="opt" data-k="' + esc(k) + '"><span class="k">' + esc(k) +
-         '</span><span class="v">' + choiceBody(q, k, lang) + "</span></button>";
+         '</span><span class="v">' + choiceBody(q, k, lang, rb) + "</span></button>";
   }
   h += "</div>";
 
@@ -566,6 +643,7 @@ function buildCard(q) {
 
 function reveal(card, q, picked) {
   const lang = langOf(q);
+  const rb = rubyOf(q);
   card.querySelectorAll(".opt").forEach((o) => {
     o.disabled = true;
     const k = o.dataset.k;
@@ -574,7 +652,7 @@ function reveal(card, q, picked) {
     else o.classList.add("dim");
   });
   if (!card.querySelector(".exp")) {
-    card.insertAdjacentHTML("beforeend", renderExplain(q, lang));
+    card.insertAdjacentHTML("beforeend", renderExplain(q, lang, rb));
   }
 }
 
@@ -636,7 +714,7 @@ function renderPaged() {
   const jump = document.createElement("div");
   jump.className = "jump";
   jump.innerHTML = '<div class="tag" style="font-size:12px;color:var(--ink-faint)">問題番号でジャンプ' +
-    '　<kbd>←</kbd><kbd>→</kbd> 移動　<kbd>1</kbd>〜<kbd>9</kbd> 解答　<kbd>T</kbd> 訳　<kbd>S</kbd> ★</div>' +
+    '　<kbd>←</kbd><kbd>→</kbd> 移動　<kbd>1</kbd>〜<kbd>9</kbd> 解答　<kbd>T</kbd> 訳　<kbd>K</kbd> かな　<kbd>S</kbd> ★</div>' +
     '<div class="jump-grid" id="jgrid"></div>';
   main.appendChild(jump);
   paintJump();
@@ -766,6 +844,21 @@ function paintLangBtn() {
   b.textContent = state.lang === "jp" ? "全文 日本語" : "全文 日中対訳";
   b.classList.toggle("on", state.lang === "both");
 }
+$("#btn-kana").onclick = function () {
+  if (state.kana) { setKana(false); return; }
+  ensureRuby(() => setKana(true));
+};
+function setKana(v) {
+  state.kana = v;
+  paintKanaBtn();
+  render();
+  saveUI();
+}
+function paintKanaBtn() {
+  $("#btn-kana").classList.toggle("on", state.kana);
+  document.body.classList.toggle("kana", state.kana);
+}
+
 $("#btn-mode").onclick = function () {
   const cur = filtered[state.idx];
   state.mode = state.mode === "paged" ? "list" : "paged";
@@ -839,6 +932,7 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") { go(state.idx - 1); return; }
     if (e.key === "ArrowRight") { go(state.idx + 1); return; }
   }
+  if (e.key === "k" || e.key === "K") { $("#btn-kana").click(); return; }
   const card = state.mode === "paged" ? main.querySelector(".card") : null;
   if (!card) return;
   const q = filtered[state.idx];
@@ -860,7 +954,10 @@ statusRow();
 paintLangBtn();
 $("#btn-mode").textContent = state.mode === "paged" ? "📖 一問ずつ" : "📜 一覧";
 setFold(state.folded);   // 前回の開閉状態を復元する
+paintKanaBtn();
 apply();
+// 前回ふりがなを出していたなら，本文を描いた後で追い読み込みして差し替える
+if (ui.kana) ensureRuby(() => setKana(true));
 })();
 </script>
 </body>
