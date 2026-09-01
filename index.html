@@ -134,6 +134,8 @@ main{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
 .ico.tr.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 
 .qtext{margin:0 0 13px;white-space:pre-wrap;word-break:break-word}
+/* 問題文と選択肢は読む量が多いので一回り大きく，太くする（em で本文サイズに追随） */
+.qtext:not(.zh){font-size:1.1em;font-weight:600}
 .blk{margin:13px 0}
 .blk-label{font-size:12px;color:var(--ink-faint);margin-bottom:4px}
 pre.code{
@@ -166,10 +168,11 @@ table.t th{background:var(--bg);font-weight:600;white-space:nowrap}
 .opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
 .opt:disabled{cursor:default}
 .opt .k{
-  flex:0 0 auto;font-weight:700;min-width:1.6em;
+  flex:0 0 auto;font-weight:700;min-width:1.6em;font-size:1.1em;
   border-radius:5px;text-align:center;
 }
-.opt .v{flex:1 1 auto;white-space:pre-wrap;word-break:break-word;min-width:0}
+.opt .v{flex:1 1 auto;white-space:pre-wrap;word-break:break-word;min-width:0;
+        font-size:1.1em;font-weight:600}
 .opt .v ol{margin:0;padding-left:1.3em}
 .opt.ok{background:var(--ok-soft);border-color:var(--ok-line)}
 .opt.ok .k{color:var(--ok)}
@@ -181,7 +184,7 @@ table.t th{background:var(--bg);font-weight:600;white-space:nowrap}
 /* ---------- 解析 ---------- */
 .exp{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
 .exp-ans{font-size:13px;margin-bottom:10px}
-.exp-ans b{color:var(--ok);font-size:15px}
+.exp-ans b{color:var(--ok);font-size:18px}
 .exp-main{
   background:var(--ok-soft);border:1px solid var(--ok-line);border-radius:9px;
   padding:11px 14px;margin-bottom:11px;white-space:pre-wrap;
@@ -197,7 +200,7 @@ table.t th{background:var(--bg);font-weight:600;white-space:nowrap}
   color:var(--ink-dim);margin-top:-4px;
 }
 .opt .v .zh{
-  display:block;margin-top:4px;padding-top:4px;font-size:13.5px;
+  display:block;margin-top:4px;padding-top:4px;font-size:13.5px;font-weight:400;
   color:var(--ink-dim);border-top:1px dashed var(--line);
 }
 .exp-main .zh{
