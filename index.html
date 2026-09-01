@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FE 過去問題集 — 基本情報技術者試験</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1c2024; --ink-dim:#5b6470; --ink-faint:#8a929c;
+  --line:#e2e5ea; --line-soft:#eef0f3;
+  --accent:#2f6fdb; --accent-soft:#e8f0fd;
+  --ok:#1a8b52; --ok-soft:#e6f5ec; --ok-line:#9dd4b5;
+  --ng:#cf3b3b; --ng-soft:#fdecec; --ng-line:#f0b4b4;
+  --star:#e0a415;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --jp:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans JP",
+       "Microsoft YaHei","PingFang SC",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181c; --panel:#1c2026; --ink:#e6e9ed; --ink-dim:#a3acb8; --ink-faint:#727b87;
+    --line:#2c323a; --line-soft:#242930;
+    --accent:#5b96ea; --accent-soft:#1d2c44;
+    --ok:#4cc98a; --ok-soft:#152c21; --ok-line:#2f6a4b;
+    --ng:#f07979; --ng-soft:#301a1a; --ng-line:#6d3535;
+    --star:#e9b93c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181c; --panel:#1c2026; --ink:#e6e9ed; --ink-dim:#a3acb8; --ink-faint:#727b87;
+  --line:#2c323a; --line-soft:#242930;
+  --accent:#5b96ea; --accent-soft:#1d2c44;
+  --ok:#4cc98a; --ok-soft:#152c21; --ok-line:#2f6a4b;
+  --ng:#f07979; --ng-soft:#301a1a; --ng-line:#6d3535;
+  --star:#e9b93c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--jp);
+  font-size:15px; line-height:1.75; -webkit-text-size-adjust:100%;
+}
+button{font-family:inherit;font-size:inherit;color:inherit}
+
+/* ---------- 顶栏 ---------- */
+header{
+  position:sticky; top:0; z-index:50; background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+.bar{max-width:1100px;margin:0 auto;padding:10px 16px}
+.bar-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:16px;letter-spacing:.02em;white-space:nowrap}
+.logo small{font-weight:400;color:var(--ink-faint);font-size:12px;margin-left:6px}
+.spacer{flex:1 1 auto}
+.tool{
+  border:1px solid var(--line); background:transparent; border-radius:7px;
+  padding:5px 11px; cursor:pointer; white-space:nowrap; font-size:13px;
+}
+.tool:hover{border-color:var(--accent);color:var(--accent)}
+.tool.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#search{
+  border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  border-radius:7px; padding:6px 11px; font-size:13px; width:210px; font-family:inherit;
+}
+#search:focus{outline:none;border-color:var(--accent)}
+
+.filters{
+  margin-top:9px;display:flex;flex-direction:column;gap:5px;
+  overflow:hidden;max-height:420px;opacity:1;
+  transition:max-height .22s ease,opacity .16s ease,margin-top .22s ease;
+}
+header.folded .filters{max-height:0;opacity:0;margin-top:0}
+#btn-filter{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:27px;padding:0;flex:0 0 auto;
+}
+#btn-filter svg{height:12px;width:auto;display:block;fill:currentColor}
+#f-summary{
+  display:none;align-items:center;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+header.folded #f-summary{display:flex}
+#f-summary b{color:var(--ink-dim);font-weight:600}
+.frow{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.flabel{
+  font-size:11px;color:var(--ink-faint);min-width:38px;padding-top:5px;
+  letter-spacing:.06em;flex:0 0 auto;
+}
+.chips{display:flex;gap:5px;flex-wrap:wrap;flex:1 1 auto}
+.chip{
+  border:1px solid var(--line); background:transparent; border-radius:20px;
+  padding:2px 11px; font-size:12.5px; cursor:pointer; line-height:1.7;
+}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.all.on{background:var(--ink-dim);border-color:var(--ink-dim)}
+
+.stats{
+  margin-top:9px;padding-top:8px;border-top:1px solid var(--line-soft);
+  display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-dim);
+  align-items:center;
+}
+.stats b{color:var(--ink);font-weight:600}
+.stats .sep{color:var(--line)}
+
+/* ---------- 主区 ---------- */
+main{max-width:1100px;margin:0 auto;padding:18px 16px 80px}
+.empty{text-align:center;color:var(--ink-faint);padding:80px 20px}
+
+/* ---------- 题目卡片 ---------- */
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:18px 20px;margin-bottom:16px;
+}
+.card-head{
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  padding-bottom:11px;margin-bottom:13px;border-bottom:1px solid var(--line-soft);
+}
+.tag{font-size:12px;color:var(--ink-dim)}
+.tag.no{font-weight:700;color:var(--ink);font-size:13.5px}
+.tag.field{
+  border:1px solid var(--line);border-radius:5px;padding:0 7px;font-size:11.5px;
+  color:var(--ink-faint);
+}
+.mark{font-size:12px;padding:0 7px;border-radius:5px;font-weight:600}
+.mark.ok{background:var(--ok-soft);color:var(--ok)}
+.mark.ng{background:var(--ng-soft);color:var(--ng)}
+.ico{
+  border:1px solid var(--line);background:transparent;border-radius:6px;
+  padding:3px 9px;font-size:12px;cursor:pointer;white-space:nowrap;
+}
+.ico:hover{border-color:var(--accent);color:var(--accent)}
+.ico.star.on{color:var(--star);border-color:var(--star)}
+.ico.tr.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+.qtext{margin:0 0 13px;white-space:pre-wrap;word-break:break-word}
+.blk{margin:13px 0}
+.blk-label{font-size:12px;color:var(--ink-faint);margin-bottom:4px}
+pre.code{
+  margin:0;background:var(--bg);border:1px solid var(--line-soft);border-radius:7px;
+  padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:13px;
+  line-height:1.65;white-space:pre;
+}
+.tw{overflow-x:auto;border:1px solid var(--line-soft);border-radius:7px}
+table.t{border-collapse:collapse;font-size:13px;min-width:100%;background:var(--panel)}
+table.t th,table.t td{
+  border:1px solid var(--line-soft);padding:5px 10px;text-align:left;
+  vertical-align:top;white-space:pre-wrap;
+}
+table.t th{background:var(--bg);font-weight:600;white-space:nowrap}
+.cap{font-size:12px;color:var(--ink-faint);margin-bottom:4px}
+.fig{max-width:100%;height:auto;border:1px solid var(--line-soft);border-radius:7px;
+     background:#fff;display:block}
+.fig-miss{
+  border:1px dashed var(--line);border-radius:7px;padding:14px;
+  font-size:12.5px;color:var(--ink-faint);
+}
+
+/* ---------- 选项 ---------- */
+.choices{margin-top:15px;display:flex;flex-direction:column;gap:7px}
+.opt{
+  display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;
+  border:1px solid var(--line);background:transparent;border-radius:9px;
+  padding:10px 13px;cursor:pointer;line-height:1.7;
+}
+.opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.opt:disabled{cursor:default}
+.opt .k{
+  flex:0 0 auto;font-weight:700;min-width:1.6em;
+  border-radius:5px;text-align:center;
+}
+.opt .v{flex:1 1 auto;white-space:pre-wrap;word-break:break-word;min-width:0}
+.opt .v ol{margin:0;padding-left:1.3em}
+.opt.ok{background:var(--ok-soft);border-color:var(--ok-line)}
+.opt.ok .k{color:var(--ok)}
+.opt.ng{background:var(--ng-soft);border-color:var(--ng-line)}
+.opt.ng .k{color:var(--ng)}
+.opt.dim{opacity:.5}
+.opt-note{font-size:12.5px;color:var(--ink-faint);margin-bottom:2px}
+
+/* ---------- 解析 ---------- */
+.exp{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.exp-ans{font-size:13px;margin-bottom:10px}
+.exp-ans b{color:var(--ok);font-size:15px}
+.exp-main{
+  background:var(--ok-soft);border:1px solid var(--ok-line);border-radius:9px;
+  padding:11px 14px;margin-bottom:11px;white-space:pre-wrap;
+}
+.exp-wrong{display:flex;flex-direction:column;gap:6px}
+.exp-w{display:flex;gap:10px;font-size:14px;color:var(--ink-dim);line-height:1.7}
+.exp-w .k{flex:0 0 auto;font-weight:700;color:var(--ng);min-width:1.6em}
+.exp-w .v{flex:1 1 auto;white-space:pre-wrap;min-width:0}
+
+/* ---------- 日中対訳 ---------- */
+.qtext.zh{
+  border-left:2px solid var(--accent);padding-left:11px;
+  color:var(--ink-dim);margin-top:-4px;
+}
+.opt .v .zh{
+  display:block;margin-top:4px;padding-top:4px;font-size:13.5px;
+  color:var(--ink-dim);border-top:1px dashed var(--line);
+}
+.exp-main .zh{
+  display:block;margin-top:8px;padding-top:8px;
+  border-top:1px dashed var(--ok-line);color:var(--ink-dim);
+}
+.exp-w .v .zh{display:block;margin-top:2px;color:var(--ink-faint);font-size:13.5px}
+.exp-none{color:var(--ink-faint);font-size:13.5px;font-style:normal}
+
+/* ---------- 翻页导航 ---------- */
+.nav{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin-top:6px;flex-wrap:wrap;
+}
+.nav button{
+  border:1px solid var(--line);background:var(--panel);border-radius:8px;
+  padding:8px 18px;cursor:pointer;font-size:14px;
+}
+.nav button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.nav button:disabled{opacity:.35;cursor:default}
+.pos{font-size:13px;color:var(--ink-dim);min-width:92px;text-align:center}
+
+/* ---------- 题号面板 ---------- */
+.jump{
+  margin-top:14px;background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;padding:14px 16px;
+}
+.jump-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;
+           max-height:290px;overflow-y:auto}
+.jn{
+  width:38px;height:28px;border:1px solid var(--line);background:transparent;
+  border-radius:5px;font-size:11.5px;cursor:pointer;padding:0;line-height:1;
+}
+.jn:hover{border-color:var(--accent)}
+.jn.ok{background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok)}
+.jn.ng{background:var(--ng-soft);border-color:var(--ng-line);color:var(--ng)}
+.jn.cur{outline:2px solid var(--accent);outline-offset:1px;font-weight:700}
+.jump-year{font-size:11.5px;color:var(--ink-faint);width:100%;margin-top:7px}
+
+.more{text-align:center;color:var(--ink-faint);font-size:13px;padding:20px}
+kbd{
+  font-family:var(--mono);font-size:11px;border:1px solid var(--line);
+  border-bottom-width:2px;border-radius:4px;padding:0 4px;color:var(--ink-dim);
+}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .bar{padding:9px 12px}
+  main{padding:14px 12px 70px}
+  .card{padding:15px 14px;border-radius:9px}
+  #search{width:100%}
+  .flabel{min-width:34px}
+  .opt{padding:9px 11px;gap:9px}
+}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="bar">
+  <div class="bar-top">
+   <div class="logo">FE 過去問題集<small>基本情報技術者試験</small></div>
+   <div class="spacer"></div>
+   <input id="search" type="search" placeholder="キーワード検索 / 中日文搜索" autocomplete="off">
+   <button class="tool" id="btn-lang">全文 日本語</button>
+   <button class="tool" id="btn-mode">📖 一問ずつ</button>
+   <button class="tool" id="btn-theme" title="配色">◐</button>
+  </div>
+
+  <div class="filters">
+   <div class="frow"><span class="flabel">年度</span><div class="chips" id="f-year"></div></div>
+   <div class="frow"><span class="flabel">科目</span><div class="chips" id="f-subject"></div></div>
+   <div class="frow"><span class="flabel">分野</span><div class="chips" id="f-field"></div></div>
+   <div class="frow"><span class="flabel">状態</span><div class="chips" id="f-status"></div></div>
+  </div>
+
+  <div class="stats">
+   <span>絞込 <b id="s-total">0</b> 問</span><span class="sep">|</span>
+   <span>解答済 <b id="s-done">0</b></span><span class="sep">|</span>
+   <span>正解率 <b id="s-rate">—</b></span><span class="sep">|</span>
+   <span>★ <b id="s-star">0</b></span>
+   <div id="f-summary"></div>
+   <div class="spacer"></div>
+   <button class="tool" id="btn-reset">記録を消去</button>
+   <button class="tool" id="btn-filter" title="絞込条件の開閉"></button>
+  </div>
+ </div>
+</header>
+
+<main id="main"></main>
+
+<script src="data/questions.js"></script>
+<script>
+"use strict";
+(function () {
+const DATA = window.FE_DATA || [];
+const KEYS = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ"];
+
+/* ===================== 状態 ===================== */
+const LS_PROG = "fe_progress", LS_STAR = "fe_star", LS_UI = "fe_ui";
+function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+const progress = load(LS_PROG, {});          // id -> {picked, correct, ts}
+const stars = new Set(load(LS_STAR, []));    // 収藏した id
+const ui = load(LS_UI, {});
+
+const state = {
+  year: new Set(ui.year || []),
+  subject: new Set(ui.subject || []),
+  field: new Set(ui.field || []),
+  status: ui.status || "all",
+  query: "",
+  lang: ui.lang === "zh" || ui.lang === "both" ? "both" : "jp",  // jp = 日本語のみ / both = 日中対訳
+  mode: ui.mode || "paged",    // paged | list
+  idx: 0,
+  perLang: {},                 // id -> "jp" | "both"（個別切替）
+  listShown: 0,
+  folded: !!ui.folded,         // 絞込エリアを畳んでいるか（手動のみ）
+};
+function saveUI() {
+  save(LS_UI, {
+    year: [...state.year], subject: [...state.subject], field: [...state.field],
+    status: state.status, lang: state.lang, mode: state.mode, folded: state.folded,
+  });
+}
+
+/* ===================== 小道具 ===================== */
+const $ = (s) => document.querySelector(s);
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+const uniq = (arr) => [...new Set(arr)];
+
+/* ===================== フィルタ ===================== */
+const YEARS = uniq(DATA.map((q) => q.year));
+const SUBJECTS = uniq(DATA.map((q) => q.subject));
+const FIELDS = uniq(DATA.map((q) => q.field));
+const STATUS = [
+  ["all", "すべて"], ["undone", "未解答"], ["done", "解答済"],
+  ["wrong", "不正解"], ["star", "★ 収藏"],
+];
+
+function matches(q) {
+  if (state.year.size && !state.year.has(q.year)) return false;
+  if (state.subject.size && !state.subject.has(q.subject)) return false;
+  if (state.field.size && !state.field.has(q.field)) return false;
+  const p = progress[q.id];
+  if (state.status === "undone" && p) return false;
+  if (state.status === "done" && !p) return false;
+  if (state.status === "wrong" && (!p || p.correct)) return false;
+  if (state.status === "star" && !stars.has(q.id)) return false;
+  if (state.query) {
+    const s = state.query.toLowerCase();
+    if (!searchText(q).includes(s)) return false;
+  }
+  return true;
+}
+const searchCache = new Map();
+function searchText(q) {
+  let t = searchCache.get(q.id);
+  if (t !== undefined) return t;
+  const parts = [q.id, q.year, q.subject, q.field, "問" + q.no, q.question, q.question_zh];
+  for (const c of q.content || []) {
+    if (c.type === "text" || c.type === "code") parts.push(c.value);
+    if (c.type === "figure") parts.push(c.alt);
+    if (c.type === "table") {
+      if (c.head) parts.push(c.head.join(" "));
+      for (const r of c.rows || []) parts.push(r.join(" "));
+    }
+  }
+  for (const k of Object.keys(q.choices || {})) {
+    const c = q.choices[k];
+    parts.push([].concat(c.jp).join(" "), [].concat(c.zh).join(" "));
+  }
+  if (q.explanation) parts.push(q.explanation.jp, q.explanation.zh);
+  for (const k of Object.keys(q.explanation_wrong || {})) {
+    parts.push(q.explanation_wrong[k].jp, q.explanation_wrong[k].zh);
+  }
+  t = parts.filter(Boolean).join(" ").toLowerCase();
+  searchCache.set(q.id, t);
+  return t;
+}
+
+let filtered = [];
+function refilter(keepId) {
+  filtered = DATA.filter(matches);
+  if (keepId) {
+    const i = filtered.findIndex((q) => q.id === keepId);
+    state.idx = i >= 0 ? i : 0;
+  } else if (state.idx >= filtered.length) {
+    state.idx = Math.max(0, filtered.length - 1);
+  }
+  state.listShown = 0;
+}
+
+/* ===================== 内容レンダリング ===================== */
+function choiceKeys(q) {
+  const ks = Object.keys(q.choices || {});
+  if (ks.length) return ks;
+  const ct = Object.keys(q.choice_tables || {});
+  if (ct.length) return ct;
+  // 図中に選択肢がある問題：正解が含まれる長さまで ア〜 を用意する
+  const n = Math.max(4, KEYS.indexOf(q.answer) + 1);
+  return KEYS.slice(0, n);
+}
+
+// 図が見つからないときは alt テキストで代替表示する
+window.__figFail = function (img) {
+  const d = document.createElement("div");
+  d.className = "fig-miss";
+  d.textContent = "［図］" + (img.getAttribute("alt") || img.getAttribute("src") || "");
+  img.replaceWith(d);
+};
+
+function renderTable(t) {
+  let h = "";
+  if (t.caption) h += '<div class="cap">' + esc(t.caption) + (t.unit ? "（" + esc(t.unit) + "）" : "") + "</div>";
+  else if (t.unit) h += '<div class="cap">単位：' + esc(t.unit) + "</div>";
+  h += '<div class="tw"><table class="t">';
+  if (t.head) h += "<thead><tr>" + t.head.map((c) => "<th>" + esc(c) + "</th>").join("") + "</tr></thead>";
+  h += "<tbody>";
+  for (const r of t.rows || []) h += "<tr>" + r.map((c) => "<td>" + esc(c) + "</td>").join("") + "</tr>";
+  h += "</tbody></table></div>";
+  return h;
+}
+
+function renderContent(q, lang) {
+  const c = q.content || [];
+  let h = "";
+  const first = c[0];
+  const jpText = first && first.type === "text" ? first.value : q.question;
+  h += '<p class="qtext">' + esc(jpText) + "</p>";
+  if (lang === "both" && q.question_zh && q.question_zh !== jpText) {
+    h += '<p class="qtext zh">' + esc(q.question_zh) + "</p>";
+  }
+  // 図・表・コードは日本語のまま（原資料にしかない形）
+  for (let i = 0; i < c.length; i++) {
+    const b = c[i];
+    if (b.type === "text") { if (i > 0) h += '<p class="qtext">' + esc(b.value) + "</p>"; continue; }
+    h += '<div class="blk">';
+    if (b.type === "code") {
+      if (b.label) h += '<div class="blk-label">' + esc(b.label) + "</div>";
+      h += '<pre class="code">' + esc(b.value) + "</pre>";
+    } else if (b.type === "table") {
+      h += renderTable(b);
+    } else if (b.type === "figure") {
+      h += '<img class="fig" src="' + esc(b.src) + '" alt="' + esc(b.alt || "") +
+           '" loading="lazy" onerror="window.__figFail(this)">';
+    }
+    h += "</div>";
+  }
+  return h;
+}
+
+function oneChoice(q, v) {
+  if (Array.isArray(v)) {
+    if (q.choice_columns && q.choice_columns.length === v.length) {
+      return '<div class="tw"><table class="t"><thead><tr>' +
+        q.choice_columns.map((h) => "<th>" + esc(h) + "</th>").join("") +
+        "</tr></thead><tbody><tr>" +
+        v.map((x) => "<td>" + esc(x) + "</td>").join("") + "</tr></tbody></table></div>";
+    }
+    return "<ol>" + v.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ol>";
+  }
+  return esc(v);
+}
+
+function choiceBody(q, k, lang) {
+  // 選択肢の表は日本語しか無いので，対訳でも 1 度だけ描く
+  if (q.choice_tables && q.choice_tables[k]) return renderTable(q.choice_tables[k]);
+  const c = (q.choices || {})[k];
+  if (!c) return '<span style="color:var(--ink-faint)">（図を参照）</span>';
+  const jp = oneChoice(q, c.jp);
+  if (lang !== "both" || c.zh == null) return jp;
+  const zh = oneChoice(q, c.zh);
+  // 数式や数値だけの選択肢は日中が同一になるため，重複表示を避ける
+  return zh === jp ? jp : jp + '<span class="zh">' + zh + "</span>";
+}
+
+function renderExplain(q, lang) {
+  // 日本語を主とし，対訳モードでは中国語を下に添える
+  const pair = (o) => {
+    if (!o) return "";
+    const jp = o.jp || o.zh || "";
+    if (lang !== "both" || !o.zh || o.zh === jp) return esc(jp);
+    return esc(jp) + '<span class="zh">' + esc(o.zh) + "</span>";
+  };
+  const main = q.explanation ? (q.explanation.jp || q.explanation.zh) : "";
+  const isNone = main === "无" || main === "なし";
+  let h = '<div class="exp">';
+  h += '<div class="exp-ans">' + (lang === "both" ? "正解 / 正确答案：" : "正解：") +
+       "<b>" + esc(q.answer) + "</b></div>";
+  if (isNone) {
+    h += '<div class="exp-main exp-none" style="background:transparent;border-style:dashed">' +
+      "解説なし（原本の確認待ち）。" +
+      (lang === "both" ? '<span class="zh">本题解析暂缺，待核对原始试卷。</span>' : "") + "</div>";
+    return h + "</div>";
+  }
+  h += '<div class="exp-main">' + pair(q.explanation) + "</div>";
+  const ew = q.explanation_wrong || {};
+  const ks = Object.keys(ew);
+  if (ks.length) {
+    h += '<div class="exp-wrong">';
+    for (const k of ks) {
+      h += '<div class="exp-w"><span class="k">' + esc(k) + '</span><span class="v">' + pair(ew[k]) + "</span></div>";
+    }
+    h += "</div>";
+  }
+  return h + "</div>";
+}
+
+/* ===================== カード ===================== */
+function langOf(q) { return state.perLang[q.id] || state.lang; }
+
+function buildCard(q) {
+  const lang = langOf(q);
+  const p = progress[q.id];
+  const card = document.createElement("div");
+  card.className = "card";
+  card.dataset.id = q.id;
+
+  let h = '<div class="card-head">';
+  h += '<span class="tag no">' + esc(q.year) + " " + esc(q.subject) + " 問" + esc(q.no) + "</span>";
+  h += '<span class="tag field">' + esc(q.field) + "</span>";
+  if (p) h += '<span class="mark ' + (p.correct ? "ok" : "ng") + '">' + (p.correct ? "正解" : "不正解") + "</span>";
+  h += '<span class="spacer"></span>';
+  h += '<button class="ico star' + (stars.has(q.id) ? " on" : "") + '" data-act="star">' +
+       (stars.has(q.id) ? "★" : "☆") + "</button>";
+  h += '<button class="ico tr' + (lang === "both" ? " on" : "") + '" data-act="tr" title="日本語と中国語を並べて表示">' +
+       (lang === "both" ? "原文のみ" : "訳") + "</button>";
+  h += "</div>";
+
+  h += renderContent(q, lang);
+
+  const ks = choiceKeys(q);
+  const noText = !q.choices || !Object.keys(q.choices).length;
+  h += '<div class="choices">';
+  if (noText && !q.choice_tables) {
+    h += '<div class="opt-note">※ 選択肢は上図を参照' +
+         (lang === "both" ? "（选项为图形，请参照上图）" : "") + "</div>";
+  }
+  for (const k of ks) {
+    h += '<button class="opt" data-k="' + esc(k) + '"><span class="k">' + esc(k) +
+         '</span><span class="v">' + choiceBody(q, k, lang) + "</span></button>";
+  }
+  h += "</div>";
+
+  card.innerHTML = h;
+
+  card.addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]");
+    if (act) {
+      if (act.dataset.act === "star") toggleStar(q, card);
+      if (act.dataset.act === "tr") toggleLang(q, card);
+      return;
+    }
+    const opt = e.target.closest(".opt");
+    if (opt && !opt.disabled) answer(q, card, opt.dataset.k);
+  });
+
+  if (p) reveal(card, q, p.picked);
+  return card;
+}
+
+function reveal(card, q, picked) {
+  const lang = langOf(q);
+  card.querySelectorAll(".opt").forEach((o) => {
+    o.disabled = true;
+    const k = o.dataset.k;
+    if (k === q.answer) o.classList.add("ok");
+    else if (k === picked) o.classList.add("ng");
+    else o.classList.add("dim");
+  });
+  if (!card.querySelector(".exp")) {
+    card.insertAdjacentHTML("beforeend", renderExplain(q, lang));
+  }
+}
+
+function answer(q, card, picked) {
+  const correct = picked === q.answer;
+  progress[q.id] = { picked: picked, correct: correct, ts: Date.now() };
+  save(LS_PROG, progress);
+  reveal(card, q, picked);
+  const head = card.querySelector(".card-head .spacer");
+  if (head && !card.querySelector(".mark")) {
+    head.insertAdjacentHTML("beforebegin",
+      '<span class="mark ' + (correct ? "ok" : "ng") + '">' + (correct ? "正解" : "不正解") + "</span>");
+  }
+  updateStats();
+  if (state.mode === "paged") paintJump();
+}
+
+function toggleStar(q, card) {
+  if (stars.has(q.id)) stars.delete(q.id); else stars.add(q.id);
+  save(LS_STAR, [...stars]);
+  const b = card.querySelector('[data-act="star"]');
+  b.classList.toggle("on", stars.has(q.id));
+  b.textContent = stars.has(q.id) ? "★" : "☆";
+  updateStats();
+}
+
+function toggleLang(q, card) {
+  state.perLang[q.id] = langOf(q) === "both" ? "jp" : "both";
+  const fresh = buildCard(q);
+  card.replaceWith(fresh);
+}
+
+/* ===================== 画面 ===================== */
+const main = $("#main");
+
+function render() {
+  main.innerHTML = "";
+  if (!filtered.length) {
+    main.innerHTML = '<div class="empty">該当する問題がありません。<br>条件を緩めてください。</div>';
+    return;
+  }
+  if (state.mode === "paged") renderPaged(); else renderList();
+}
+
+function renderPaged() {
+  const q = filtered[state.idx];
+  main.appendChild(buildCard(q));
+
+  const nav = document.createElement("div");
+  nav.className = "nav";
+  nav.innerHTML =
+    '<button id="prev"' + (state.idx === 0 ? " disabled" : "") + ">← 前の問題</button>" +
+    '<span class="pos">' + (state.idx + 1) + " / " + filtered.length + "</span>" +
+    '<button id="next"' + (state.idx >= filtered.length - 1 ? " disabled" : "") + ">次の問題 →</button>";
+  main.appendChild(nav);
+  nav.querySelector("#prev").onclick = () => go(state.idx - 1);
+  nav.querySelector("#next").onclick = () => go(state.idx + 1);
+
+  const jump = document.createElement("div");
+  jump.className = "jump";
+  jump.innerHTML = '<div class="tag" style="font-size:12px;color:var(--ink-faint)">問題番号でジャンプ' +
+    '　<kbd>←</kbd><kbd>→</kbd> 移動　<kbd>1</kbd>〜<kbd>9</kbd> 解答　<kbd>T</kbd> 訳　<kbd>S</kbd> ★</div>' +
+    '<div class="jump-grid" id="jgrid"></div>';
+  main.appendChild(jump);
+  paintJump();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function paintJump() {
+  const g = $("#jgrid");
+  if (!g) return;
+  let h = "", lastYS = "";
+  filtered.forEach((q, i) => {
+    const ys = q.year + " " + q.subject;
+    if (ys !== lastYS) { h += '<div class="jump-year">' + esc(ys) + "</div>"; lastYS = ys; }
+    const p = progress[q.id];
+    const cls = "jn" + (p ? (p.correct ? " ok" : " ng") : "") + (i === state.idx ? " cur" : "");
+    h += '<button class="' + cls + '" data-i="' + i + '">' + esc(q.no) + "</button>";
+  });
+  g.innerHTML = h;
+  g.onclick = (e) => {
+    const b = e.target.closest(".jn");
+    if (b) go(+b.dataset.i);
+  };
+}
+
+function go(i) {
+  if (i < 0 || i >= filtered.length) return;
+  state.idx = i;
+  render();
+}
+
+const CHUNK = 25;
+function renderList() {
+  const wrap = document.createElement("div");
+  wrap.id = "listwrap";
+  main.appendChild(wrap);
+  const more = document.createElement("div");
+  more.className = "more";
+  more.id = "more";
+  main.appendChild(more);
+  state.listShown = 0;
+  growList();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function growList() {
+  const wrap = $("#listwrap");
+  if (!wrap) return;
+  const end = Math.min(state.listShown + CHUNK, filtered.length);
+  const frag = document.createDocumentFragment();
+  for (let i = state.listShown; i < end; i++) frag.appendChild(buildCard(filtered[i]));
+  wrap.appendChild(frag);
+  state.listShown = end;
+  const more = $("#more");
+  if (more) {
+    more.textContent = end >= filtered.length
+      ? "— 全 " + filtered.length + " 問を表示しました —"
+      : "スクロールで続きを読み込みます（" + end + " / " + filtered.length + "）";
+  }
+}
+
+window.addEventListener("scroll", () => {
+  if (state.mode !== "list") return;
+  if (state.listShown >= filtered.length) return;
+  if (window.innerHeight + window.scrollY > document.body.offsetHeight - 900) growList();
+}, { passive: true });
+
+/* ===================== 統計 ===================== */
+function updateStats() {
+  const ids = filtered.map((q) => q.id);
+  let done = 0, ok = 0;
+  for (const id of ids) { const p = progress[id]; if (p) { done++; if (p.correct) ok++; } }
+  $("#s-total").textContent = filtered.length;
+  $("#s-done").textContent = done;
+  $("#s-rate").textContent = done ? Math.round((ok / done) * 100) + "%" : "—";
+  $("#s-star").textContent = ids.filter((id) => stars.has(id)).length;
+}
+
+/* ===================== フィルタ UI ===================== */
+function chipRow(host, items, set, key) {
+  const box = $(host);
+  let h = '<button class="chip all' + (set.size === 0 ? " on" : "") + '" data-v="">すべて</button>';
+  for (const v of items) h += '<button class="chip' + (set.has(v) ? " on" : "") + '" data-v="' + esc(v) + '">' + esc(v) + "</button>";
+  box.innerHTML = h;
+  box.onclick = (e) => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    const v = b.dataset.v;
+    if (!v) set.clear();
+    else if (set.has(v)) set.delete(v);
+    else set.add(v);
+    chipRow(host, items, set, key);
+    apply();
+  };
+}
+function statusRow() {
+  const box = $("#f-status");
+  box.innerHTML = STATUS.map(([v, label]) =>
+    '<button class="chip' + (state.status === v ? " on" : "") + (v === "all" ? " all" : "") +
+    '" data-v="' + v + '">' + label + "</button>").join("");
+  box.onclick = (e) => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    state.status = b.dataset.v;
+    statusRow();
+    apply();
+  };
+}
+
+function apply(keepId) {
+  refilter(keepId);
+  updateStats();
+  render();
+  paintSummary();
+  saveUI();
+}
+
+/* ===================== ツールバー ===================== */
+$("#btn-lang").onclick = function () {
+  state.lang = state.lang === "jp" ? "both" : "jp";
+  state.perLang = {};
+  paintLangBtn();
+  render();
+  saveUI();
+};
+function paintLangBtn() {
+  const b = $("#btn-lang");
+  b.textContent = state.lang === "jp" ? "全文 日本語" : "全文 日中対訳";
+  b.classList.toggle("on", state.lang === "both");
+}
+$("#btn-mode").onclick = function () {
+  const cur = filtered[state.idx];
+  state.mode = state.mode === "paged" ? "list" : "paged";
+  this.textContent = state.mode === "paged" ? "📖 一問ずつ" : "📜 一覧";
+  apply(cur && cur.id);
+};
+$("#btn-theme").onclick = function () {
+  const r = document.documentElement;
+  const now = r.getAttribute("data-theme");
+  const dark = now ? now === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.setAttribute("data-theme", dark ? "light" : "dark");
+};
+$("#btn-reset").onclick = function () {
+  if (!confirm("解答記録と★収藏をすべて消去します。よろしいですか？")) return;
+  for (const k of Object.keys(progress)) delete progress[k];
+  stars.clear();
+  save(LS_PROG, progress); save(LS_STAR, []);
+  apply();
+};
+let timer = null;
+$("#search").oninput = function () {
+  clearTimeout(timer);
+  const v = this.value.trim();
+  timer = setTimeout(() => { state.query = v; apply(); }, 180);
+};
+
+/* ===================== 絞込エリアの折り畳み（ボタン操作のみ） ===================== */
+const header = document.querySelector("header");
+
+// 二重シェブロン（上＝閉じる／下＝開く）。色はボタンの文字色を継ぐ
+const ICON_UP =
+  '<svg viewBox="0 0 1143 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+  '<path d="M47.878466 619.105004a47.602224 47.602224 0 0 0 33.797579-13.804645L571.502929 114.997453l489.826884 490.302906a47.602224 47.602224 0 0 0 67.595158 0 47.602224 47.602224 0 0 0 0-67.595158l-523.624463-523.624463a47.602224 47.602224 0 0 0-67.595158 0l-523.624463 523.624463a47.602224 47.602224 0 0 0 0 67.595158A47.602224 47.602224 0 0 0 47.878466 619.105004z"/>' +
+  '<path d="M605.300508 418.699641a47.602224 47.602224 0 0 0-67.595158 0l-523.624463 523.624463a47.602224 47.602224 0 0 0 0 67.595158 47.602224 47.602224 0 0 0 67.595158 0L571.502929 519.616356l489.826884 490.302906a47.602224 47.602224 0 0 0 67.595158 0 47.602224 47.602224 0 0 0 0-67.595158z"/></svg>';
+const ICON_DOWN =
+  '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+  '<path d="M158.27 465.05l354.21 327.12L865.7 465.25c16.97-15.71 43.46-14.68 59.16 2.29 15.71 16.97 14.68 43.46-2.29 59.16l-381.6 353.18c-15.73 14.56-39.62 14.73-55.54 1.17a40.37 40.37 0 0 1-2-1.72L101.46 526.56c-16.99-15.69-18.04-42.17-2.35-59.16 15.68-16.99 42.17-18.04 59.16-2.35z"/>' +
+  '<path d="M160.11 144.37l350.08 329.54 354.05-326.02c17.01-15.66 43.49-14.57 59.16 2.44 15.66 17.01 14.57 43.49-2.44 59.16L541.11 559.25c-0.21 0.23-0.4 0.46-0.62 0.69-15.85 16.84-42.34 17.64-59.18 1.79l-378.6-356.39c-16.84-15.85-17.64-42.34-1.79-59.18 15.86-16.84 42.35-17.64 59.19-1.79z"/></svg>';
+
+function setFold(v) {
+  state.folded = v;
+  header.classList.toggle("folded", v);
+  const b = $("#btn-filter");
+  b.innerHTML = v ? ICON_DOWN : ICON_UP;               // 畳んでいる時は「下ろす」矢印
+  b.title = v ? "絞込条件を開く" : "絞込条件を閉じる";
+  paintSummary();
+}
+function paintSummary() {
+  if (!state.folded) return;
+  const parts = [];
+  const put = (label, set) => { if (set.size) parts.push(label + " " + [...set].join("・")); };
+  put("年度", state.year); put("科目", state.subject); put("分野", state.field);
+  const st = STATUS.find(([v]) => v === state.status);
+  if (state.status !== "all" && st) parts.push(st[1]);
+  if (state.query) parts.push("“" + state.query + "”");
+  $("#f-summary").innerHTML = '<span class="sep">|</span>&nbsp;' + (parts.length
+    ? "<b>" + esc(parts.join(" ／ ")) + "</b>"
+    : "条件なし");
+}
+
+$("#btn-filter").onclick = function () {
+  setFold(!state.folded);
+  saveUI();
+};
+
+/* ===================== キーボード ===================== */
+document.addEventListener("keydown", (e) => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (state.mode === "paged") {
+    if (e.key === "ArrowLeft") { go(state.idx - 1); return; }
+    if (e.key === "ArrowRight") { go(state.idx + 1); return; }
+  }
+  const card = state.mode === "paged" ? main.querySelector(".card") : null;
+  if (!card) return;
+  const q = filtered[state.idx];
+  if (/^[1-9]$/.test(e.key)) {
+    const opt = card.querySelectorAll(".opt")[+e.key - 1];
+    if (opt && !opt.disabled) answer(q, card, opt.dataset.k);
+  } else if (e.key === "t" || e.key === "T") {
+    toggleLang(q, card);
+  } else if (e.key === "s" || e.key === "S") {
+    toggleStar(q, main.querySelector(".card"));
+  }
+});
+
+/* ===================== 起動 ===================== */
+chipRow("#f-year", YEARS, state.year, "year");
+chipRow("#f-subject", SUBJECTS, state.subject, "subject");
+chipRow("#f-field", FIELDS, state.field, "field");
+statusRow();
+paintLangBtn();
+$("#btn-mode").textContent = state.mode === "paged" ? "📖 一問ずつ" : "📜 一覧";
+setFold(state.folded);   // 前回の開閉状態を復元する
+apply();
+})();
+</script>
+</body>
+</html>
